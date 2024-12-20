@@ -75,3 +75,6 @@ app.listen(4000, () => {
   console.log("Connected to backend.");
 });
 // Route to get the email of the last logged-in user
+import contactRoutes from "./route/contact.js";
+// Use the contact routes
+app.use("/api/contacts", contactRoutes);

@@ -31,5 +31,7 @@ router.get("/:id", getRoom);
 
 // Route to get all rooms
 router.get("/", getAllRooms);
+// Routes using the middleware
+
 
 export default router;

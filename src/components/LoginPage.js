@@ -59,17 +59,21 @@ function LoginPage() {
       const response = await axios.post("/auth/login", { name, password });
       alert("Login successful!");
       const { isAdmin, token } = response.data;
-
+  
+      // Store token for authentication
       localStorage.setItem("token", token);
-
+  
       // Redirect user based on role
-      window.location.href = isAdmin ? "/adminpanel" : "/homepage";
-          window.location.href = "/home";  // Change this to redirect to your desired home page
-
+      if (isAdmin) {
+        window.location.href = "/adminpanel";
+      } else {
+        window.location.href = "/home";
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Error logging in");
     }
   };
+  
 
   const handleSignup = async (e) => {
     e.preventDefault();

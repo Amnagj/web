@@ -23,6 +23,11 @@ router.post('/submit', async (req, res) => {
     res.status(500).json({ message: 'There was an error saving your form. Please try again later.' });
   }
 });
+import { getAllContacts } from "../controller/contactController.js";
+
+
+router.get("/", getAllContacts);
+
 
 
 

@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "./AdminPanel.css"; // Assurez-vous que ce fichier existe et contient les styles nécessaires
+import "./AdminPanel.css"; // Ensure this file exists and contains the necessary styles
 import graph1 from "./user_signups_by_month.jpg";
 import graph2 from "./user_repartition.jpg";
 import graph3 from "./room_bookings.jpg";
 import graph4 from "./room_occupancy_rate.jpg";
 
-
-
-// Composant pour le tableau de bord
+// Component for the dashboard
 const DashboardContent = () => (
   <div className="dashboard-container">
     <header>
@@ -40,14 +38,14 @@ const DashboardContent = () => (
 );
 
 const AdminPanel = () => {
-  const [users, setUsers] = useState([]); // Liste des utilisateurs
-  const [loading, setLoading] = useState(true); // État de chargement
-  const [error, setError] = useState(null); // État d'erreur
-  const [newUser, setNewUser] = useState({ name: "", mail: "", password: "" }); // Données du nouvel utilisateur
-  const [success, setSuccess] = useState(null); // Message de succès
-  const [graphUrl, setGraphUrl] = useState(""); // URL du graphique
+  const [users, setUsers] = useState([]); // List of users
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [newUser, setNewUser] = useState({ name: "", mail: "", password: "" }); // New user data
+  const [success, setSuccess] = useState(null); // Success message
+  const [contacts, setContacts] = useState([]); // Contacts state
 
-  // Récupérer les utilisateurs depuis le serveur
+  // Fetch users from the server
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -55,7 +53,7 @@ const AdminPanel = () => {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          withCredentials: true, // Assure que les cookies sont envoyés
+          withCredentials: true, // Ensure cookies are sent
         });
         setUsers(response.data);
       } catch (err) {
@@ -69,22 +67,27 @@ const AdminPanel = () => {
     fetchUsers();
   }, []);
 
-  // Récupérer l'image du graphique
+  // Fetch contacts from the backend
   useEffect(() => {
-    const fetchGraph = async () => {
+    const fetchContacts = async () => {
       try {
-        const graphEndpoint = "http://localhost:4000/api/graph/user-repartition";
-        setGraphUrl(graphEndpoint);
+        const response = await axios.get("http://localhost:4000/api/contacts", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          withCredentials: true, // Ensure cookies are sent
+        });
+        setContacts(response.data);
       } catch (err) {
-        console.error("Error fetching graph:", err);
-        setError("Error loading graph.");
+        console.error("Error fetching contacts:", err);
+        setError(err.message);
       }
     };
 
-    fetchGraph();
+    fetchContacts();
   }, []);
 
-  // Ajouter un utilisateur
+  // Handle adding a new user
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
@@ -100,8 +103,8 @@ const AdminPanel = () => {
         throw new Error("Failed to add user.");
       }
       const addedUser = await response.json();
-      setUsers([...users, addedUser]); // Ajouter l'utilisateur à la liste
-      setNewUser({ name: "", mail: "", password: "" }); // Réinitialiser le formulaire
+      setUsers([...users, addedUser]); // Add user to the list
+      setNewUser({ name: "", mail: "", password: "" }); // Reset form
       setSuccess("User added successfully!");
       setError(null);
     } catch (err) {
@@ -110,26 +113,38 @@ const AdminPanel = () => {
     }
   };
 
-  // Supprimer un utilisateur
   const handleDeleteUser = async (userId) => {
+    const token = localStorage.getItem("token"); // Retrieve token from localStorage
+    if (!token) {
+      console.error("Token is missing. Please login first.");
+      setError("Token is missing. Please login first.");
+      return; // Stop execution if token is missing
+    }
+  
+    console.log("Token being sent:", token); // Debugging line
     try {
       const response = await fetch(`http://localhost:4000/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`, // Send token in header
         },
       });
       if (!response.ok) {
         throw new Error("Failed to delete user.");
       }
-      setUsers(users.filter((user) => user._id !== userId)); // Retirer l'utilisateur de la liste
+      const result = await response.json();
+      setUsers(users.filter((user) => user._id !== userId)); // Remove user from the list
       setSuccess("User deleted successfully!");
       setError(null);
     } catch (err) {
-      setError(err.message);
+      console.error("Error deleting user:", err);
+      setError("Error deleting user: " + err.message);
       setSuccess(null);
     }
   };
+  
+  
+  
 
   return (
     <div className="admin-panel">
@@ -139,7 +154,7 @@ const AdminPanel = () => {
         {error && <p className="error">{error}</p>}
         {success && <p className="success">{success}</p>}
 
-        {/* Tableau des utilisateurs */}
+        {/* User Table */}
         {!loading && !error && (
           <table className="user-table">
             <thead>
@@ -157,18 +172,45 @@ const AdminPanel = () => {
                   <td>{user.name}</td>
                   <td>{user.mail}</td>
                   <td>{user.isAdmin ? "Admin" : "User"}</td>
+                  
                 </tr>
               ))}
             </tbody>
           </table>
         )}
 
-        {/* Section Graphique */}
-        
-      </div>
+        {/* Dashboard Section */}
+        <DashboardContent />
 
-      {/* Insertion du Dashboard */}
-      <DashboardContent />
+        {/* Contacts Table */}
+        <div className="contacts-section">
+          <h2>Registered Contacts</h2>
+          {contacts.length > 0 ? (
+            <table className="contacts-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contacts.map((contact) => (
+                  <tr key={contact._id}>
+                    <td>{contact._id}</td>
+                    <td>{contact.name}</td>
+                    <td>{contact.email}</td>
+                    <td>{contact.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No contacts available.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

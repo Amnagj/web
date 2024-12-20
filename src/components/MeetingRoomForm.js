@@ -11,7 +11,11 @@ function MeetingRoomForm() {
   const [workspaceType, setWorkspaceType] = useState('Meeting room');
   const [availabilityMessage, setAvailabilityMessage] = useState(null);
   const navigate = useNavigate(); // Initialize useNavigate hook
+  const [errorMessage, setErrorMessage] = useState(null);
 
+  const isLoggedIn = () => {
+    return document.cookie.includes('access_token');
+  };
   // Counter handlers
   const incrementPeople = () => setPeopleCount((prev) => prev + 1);
   const decrementPeople = () => peopleCount > 1 && setPeopleCount((prev) => prev - 1);
@@ -38,25 +42,36 @@ function MeetingRoomForm() {
       setAvailabilityMessage('Please fill in all required fields.');
       return;
     }
-
+  
     try {
-      const response = await axios.post('/rooms/check-availability', {
-        type: workspaceType,
-        date: selectedDate,
-        startTime,
-        endTime,
-      });
-
+      // Make a POST request to check room availability
+      const response = await axios.post(
+        '/rooms/check-availability', 
+        {
+          type: workspaceType,
+          date: selectedDate,
+          startTime,
+          endTime,
+        },
+        { withCredentials: true } // Send cookies along with the request
+      );
+  
       if (response.data.available) {
-        navigate('/available-rooms', { state: { rooms: response.data.rooms } }); // Use navigate to move to available rooms page
+        navigate('/available-rooms', { state: { rooms: response.data.rooms } });
       } else {
         setAvailabilityMessage('No rooms are available at this time.');
       }
     } catch (error) {
-      setAvailabilityMessage('An error occurred while checking availability.');
+      // Check for authentication error or any other error
+      if (error.response && error.response.status === 401) {
+        setErrorMessage('You must be logged in to book a room.');
+      } else {
+        setAvailabilityMessage('An error occurred while checking availability.');
+      }
       console.error(error);
     }
   };
+  
 
   return (
     <div className="booking-form">

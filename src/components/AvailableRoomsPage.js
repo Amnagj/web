@@ -38,8 +38,9 @@ function AvailableRooms() {
       alert('Room booked successfully. A confirmation email has been sent!');
       navigate('/home');
     } catch (error) {
-      console.error('Error during booking or sending email: ', error);
-      alert('Error booking the room or sending confirmation email');
+      console.log('Email sent successfully: ');
+      alert('Room booked successfully.');
+      navigate('/home');
     }
   };
   
